@@ -1,0 +1,12 @@
+{
+  "name": "myasoprom-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check src/app.js && node --check src/api.js && node --check src/domain.js",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": { "node": ">=22" }
+}

@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>МясоПром CRM — Учёт и контроль поставок мяса</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            meat: {
+              50: '#FFF5F5',
+              100: '#FED7D7',
+              500: '#E53E3E',
+              600: '#C53030',
+              700: '#9B2C2C',
+            },
+            brand: {
+              50: '#F0FDF4',
+              100: '#DCFCE7',
+              500: '#16A34A',
+              600: '#15803D',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased h-screen overflow-hidden flex flex-col">
+
+  <!-- ======================================================== -->
+  <!-- 1. AUTH / LOGIN SCREEN -->
+  <!-- ======================================================== -->
+  <div id="screen-auth" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 p-4">
+    <!-- Background glow decoration -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-8 relative z-10">
+      <!-- Logo & Brand Header -->
+      <div class="text-center mb-7">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 text-white shadow-lg shadow-red-500/30 mb-3">
+          <i class="fa-solid fa-drumstick-bite text-2xl"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">МясоПром CRM</h2>
+        <p class="text-xs text-slate-500 font-medium mt-1">Автоматизированная система учёта поставок сырья и ветконтроля</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Логин или Корп. Email</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-regular fa-envelope text-sm"></i>
+            </span>
+            <input type="text" id="loginUsername" required value="inspector@myasoprom.ru" 
+                   class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-medium transition"
+                   placeholder="operator@plant.ru">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Пароль</label>
+            <a href="#" onclick="alertNotice('Сброс пароля', 'Обратитесь к администратору отдела АСУ ТП: внутр. 104')" class="text-xs font-semibold text-red-600 hover:text-red-700">Забыли?</a>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-lock text-sm"></i>
+            </span>
+            <input type="password" id="loginPassword" required value="••••••••••••"
+                   class="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-medium transition"
+                   placeholder="Ваш пароль">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+              <i class="fa-regular fa-eye text-sm" id="pwdToggleIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <label class="flex items-center space-x-2 text-xs text-slate-600 font-medium cursor-pointer select-none">
+            <input type="checkbox" checked class="rounded border-slate-300 text-red-600 focus:ring-red-500 w-4 h-4">
+            <span>Запомнить смену на этом терминале</span>
+          </label>
+        </div>
+
+        <button type="submit" 
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-red-600/25 transition-all transform active:scale-[0.99] flex items-center justify-center space-x-2 text-sm mt-3">
+          <span>Войти в журнал поставок</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+
+        <!-- Test credentials helper -->
+        <div class="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-center text-xs text-slate-500">
+          <span class="font-medium text-slate-700">Быстрый демо-вход:</span> смена приёмщика №2 / склад охлажденного сырья
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 2. MAIN APPLICATION (SHIPMENTS DASHBOARD) -->
+  <!-- ======================================================== -->
+  <div id="screen-main" class="flex-1 flex flex-col h-full overflow-hidden">
+    
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between flex-shrink-0 z-20">
+      <div class="flex items-center space-x-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-md shadow-red-500/20">
+            <i class="fa-solid fa-drumstick-bite text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-slate-900 text-base leading-tight">МясоПром</span>
+              <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Приёмка</span>
+            </div>
+            <span class="text-xs text-slate-500">Цех первичной переработки №1</span>
+          </div>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+
+        <!-- Mercury GIS Integration Status -->
+        <div class="hidden lg:flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>ФГИС «Меркурий»: <b>Подключено онлайн</b></span>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center space-x-3">
+        <!-- New Shipment Button -->
+        <button onclick="openShipmentModal()" class="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-sm shadow-red-600/25 flex items-center space-x-2 transition">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Оформить приход партии</span>
+        </button>
+
+        <div class="h-6 w-px bg-slate-200"></div>
+
+        <!-- Inspector User Profile -->
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm border border-slate-200">
+            ИС
+          </div>
+          <div class="hidden sm:block text-left text-xs leading-tight">
+            <div class="font-bold text-slate-800">Иван Смирнов</div>
+            <div class="text-slate-400">Ветврач-приёмщик</div>
+          </div>
+          <button onclick="handleLogout()" title="Выйти из системы" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition ml-1">
+            <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN SCROLLABLE DASHBOARD -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- STAT CARDS (REAL-TIME METRICS) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Поставок за смену</p>
+            <h3 id="statTotalCount" class="text-2xl font-extrabold text-slate-900 mt-1 font-mono">14 партий</h3>
+            <span class="inline-flex items-center text-xs text-emerald-600 font-semibold mt-1">
+              <i class="fa-solid fa-arrow-trend-up mr-1 text-[10px]"></i> +3 к прошлой смене
+            </span>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Принятый вес нетто</p>
+            <h3 id="statTotalWeight" class="text-2xl font-extrabold text-slate-900 mt-1 font-mono">42 850 кг</h3>
+            <span class="inline-flex items-center text-xs text-slate-500 font-semibold mt-1">
+              Брутто: ~46.2 т
+            </span>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-weight-hanging"></i>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">На ветконтроле</p>
+            <h3 id="statPendingCount" class="text-2xl font-extrabold text-indigo-600 mt-1 font-mono">2 партии</h3>
+            <span class="inline-flex items-center text-xs text-indigo-600 font-semibold mt-1">
+              Требуется экспресс-анализ
+            </span>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-microscope"></i>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Средняя t° сырья</p>
+            <h3 class="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">+2.1 °C</h3>
+            <span class="inline-flex items-center text-xs text-emerald-600 font-semibold mt-1">
+              <i class="fa-solid fa-shield-halved mr-1 text-[10px]"></i> Норматив соблюдён (0..+4°C)
+            </span>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-temperature-arrow-down"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER & ACTION TOOLBAR -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Search & Filter inputs -->
+        <div class="flex flex-wrap items-center gap-3 flex-1">
+          <!-- Search input -->
+          <div class="relative min-w-[240px] flex-1 max-w-md">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-xs text-slate-400"></i>
+            <input type="text" id="searchInput" oninput="applyFilters()" 
+                   placeholder="Поиск по номеру ТТН, поставщику, ВСД Меркурий..." 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          </div>
+
+          <!-- Status Filter -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <span class="text-slate-400 font-semibold uppercase text-[10px] pl-1">Статус:</span>
+            <select id="statusFilter" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+              <option value="ALL">Все статусы</option>
+              <option value="ACCEPTED">Принято на склад</option>
+              <option value="INSPECTION">Ветконтроль</option>
+              <option value="UNLOADING">Разгрузка</option>
+              <option value="REJECTED">Брак / Возврат</option>
+            </select>
+          </div>
+
+          <!-- Meat Category Filter -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <span class="text-slate-400 font-semibold uppercase text-[10px]">Вид сырья:</span>
+            <select id="categoryFilter" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500/20">
+              <option value="ALL">Все категории</option>
+              <option value="Говядина">Говядина (полутуши / четвертины)</option>
+              <option value="Свинина">Свинина (полутуши охл.)</option>
+              <option value="Птица">Птица (филе / тушки)</option>
+              <option value="Баранина">Баранина охл.</option>
+              <option value="Субпродукты">Субпродукты говяжьи</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Reset / Table Actions -->
+        <div class="flex items-center space-x-2">
+          <button onclick="resetFilters()" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Сброс
+          </button>
+          <button onclick="exportToCSV()" class="px-3 py-2 text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-xl transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-file-excel text-emerald-600"></i>
+            <span>Выгрузка в 1С</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN DATA TABLE -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <!-- Table Head -->
+            <thead class="bg-slate-50/80 border-b border-slate-200 uppercase font-bold text-slate-500 text-[11px] tracking-wider">
+              <tr>
+                <th class="py-3.5 px-4">Накладная (ТТН)</th>
+                <th class="py-3.5 px-4">Поставщик / Агрохолдинг</th>
+                <th class="py-3.5 px-4">Сырьё / Категория</th>
+                <th class="py-3.5 px-4 text-right">Вес (Нетто/Брутто)</th>
+                <th class="py-3.5 px-4 text-center">t° сырья</th>
+                <th class="py-3.5 px-4">Меркурий / ВСД</th>
+                <th class="py-3.5 px-4">Статус приёмки</th>
+                <th class="py-3.5 px-4">Время прибытия</th>
+                <th class="py-3.5 px-4 text-center">Действия</th>
+              </tr>
+            </thead>
+
+            <!-- Table Body with Dynamic Shipments -->
+            <tbody id="shipmentsTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
+              <!-- Rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+          <div>
+            Показано: <span id="displayedCount" class="font-bold text-slate-800">0</span> из <span id="totalAvailableCount" class="font-bold text-slate-800">0</span> поставок
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 cursor-not-allowed">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold">1</button>
+            <button class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600">2</button>
+            <button class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 3. MODAL: DETAILED SHIPMENT INSPECTION VIEW -->
+  <!-- ======================================================== -->
+  <div id="viewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-red-600/30 border border-red-500/40 text-red-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold flex items-center space-x-2">
+              <span id="viewModalTtn">ТТН-0000</span>
+              <span id="viewModalStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold">Статус</span>
+            </h3>
+            <p id="viewModalSupplier" class="text-xs text-slate-300">Поставщик</p>
+          </div>
+        </div>
+        <button onclick="closeViewModal()" class="text-slate-400 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Content Body -->
+      <div class="p-6 overflow-y-auto space-y-6">
+        
+        <!-- Primary Inspection Highlights -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400">Категория сырья</span>
+            <p id="viewCategory" class="text-sm font-bold text-slate-900 mt-0.5">—</p>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400">Вес Нетто</span>
+            <p id="viewNetWeight" class="text-sm font-bold text-slate-900 mt-0.5 font-mono">—</p>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400">Температура в толще</span>
+            <p id="viewTemp" class="text-sm font-bold mt-0.5 font-mono">—</p>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400">Время въезда ТС</span>
+            <p id="viewTime" class="text-sm font-bold text-slate-900 mt-0.5">—</p>
+          </div>
+        </div>
+
+        <!-- Mercury & Veterinary Data Section -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-award text-amber-500"></i>
+              <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">Ветеринарное свидетельство (ФГИС «Меркурий»)</h4>
+            </div>
+            <span class="text-[11px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-semibold">ВСД ПОГАШЕНО</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <span class="text-slate-400 block">UUID электронного ВСД:</span>
+              <span id="viewVsdUuid" class="font-mono font-semibold text-slate-800 break-all select-all">--</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Госветврач пункта отгрузки:</span>
+              <span id="viewVetOfficer" class="font-semibold text-slate-800">Петров В. А. (СББЖ №14)</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Гос. номер рефрижератора:</span>
+              <span id="viewTruckPlate" class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">Р 482 УХ 799</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Пломба кузова:</span>
+              <span id="viewSealNumber" class="font-mono font-semibold text-slate-800">PL-8893421 (Цела)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown & Quality checks -->
+        <div class="border border-slate-200 rounded-2xl p-4 bg-white space-y-3">
+          <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center space-x-2">
+            <i class="fa-solid fa-list-check text-slate-500"></i>
+            <span>Результаты входного органолептического контроля</span>
+          </h4>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-xl">
+              <span class="text-emerald-700 block text-[11px] font-medium">Запах и цвет</span>
+              <span class="font-bold text-emerald-800 text-xs">Специфический, норма</span>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-xl">
+              <span class="text-emerald-700 block text-[11px] font-medium">Консистенция</span>
+              <span class="font-bold text-emerald-800 text-xs">Упругая, ямка выравнивается</span>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-100 p-2.5 rounded-xl">
+              <span class="text-emerald-700 block text-[11px] font-medium">Клеймение туш</span>
+              <span class="font-bold text-emerald-800 text-xs">Овальное клеймо 1 кат.</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <span class="text-xs text-slate-400 block">Комментарий ветлаборатории:</span>
+            <p id="viewNotes" class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80 mt-1">
+              Партия соответствует ГОСТ 31777-2012. Допущена к обвалке и жиловке в цехе глубокой переработки.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+        <button onclick="printShipmentCard()" class="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center space-x-1.5 px-3 py-2 border border-slate-300 rounded-xl hover:bg-white transition">
+          <i class="fa-solid fa-print"></i>
+          <span>Печать акта приёмки</span>
+        </button>
+        <div class="flex items-center space-x-2">
+          <button onclick="closeViewModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition">Закрыть</button>
+          <button id="viewModalEditBtn" class="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Редактировать запись</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 4. MODAL: CREATE / EDIT SHIPMENT -->
+  <!-- ======================================================== -->
+  <div id="shipmentModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-sm font-bold text-white">
+            <i class="fa-solid fa-pen-nib"></i>
+          </div>
+          <h3 id="formModalTitle" class="text-sm font-bold">Оформление новой отгрузки мяса</h3>
+        </div>
+        <button onclick="closeShipmentModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="shipmentForm" onsubmit="handleFormSubmit(event)" class="p-6 overflow-y-auto space-y-4">
+        <input type="hidden" id="formShipmentId" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Номер ТТН -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Номер ТТН / Накладной *</label>
+            <input type="text" id="formTtn" required placeholder="ТТН-8492" 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          </div>
+
+          <!-- Поставщик -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Поставщик сырья *</label>
+            <input type="text" id="formSupplier" required placeholder="ООО «Агро-Белогорье»" 
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Категория сырья -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Вид мясного сырья *</label>
+            <select id="formCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+              <option value="Говядина (полутуши охл.)">Говядина (полутуши охл.)</option>
+              <option value="Свинина (полутуши 2 кат.)">Свинина (полутуши 2 кат.)</option>
+              <option value="Птица (филе грудки зам.)">Птица (филе грудки зам.)</option>
+              <option value="Баранина (туши охл.)">Баранина (туши охл.)</option>
+              <option value="Субпродукты говяжьи">Субпродукты говяжьи</option>
+            </select>
+          </div>
+
+          <!-- Статус -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Статус на приемке *</label>
+            <select id="formStatus" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+              <option value="ACCEPTED">Принято на склад</option>
+              <option value="INSPECTION">Ветеринарный контроль</option>
+              <option value="UNLOADING">Ожидает разгрузки</option>
+              <option value="REJECTED">Брак / Возврат поставщику</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Вес Нетто -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Вес Нетто (кг) *</label>
+            <input type="number" id="formNetWeight" required placeholder="4200" min="1" step="1"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono">
+          </div>
+
+          <!-- Вес Брутто -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Вес Брутто (кг)</label>
+            <input type="number" id="formGrossWeight" placeholder="4550" min="1" step="1"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono">
+          </div>
+
+          <!-- Температура сырья -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Темп-ра в толще (°C) *</label>
+            <input type="number" id="formTemp" required placeholder="2.5" step="0.1"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono">
+          </div>
+        </div>
+
+        <!-- Меркурий ВСД -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Номер ВСД / Идентификатор «Меркурий» *</label>
+          <input type="text" id="formMercuryId" required placeholder="d49c67b2-8a90-4e12-b108-9842aef39420"
+                 class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Госномер авто -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Гос. номер авто / прицепа</label>
+            <input type="text" id="formTruckPlate" placeholder="Е 771 КВ 77"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium uppercase focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          </div>
+
+          <!-- Время прибытия -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Дата и время фиксации</label>
+            <input type="datetime-local" id="formDateTime"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500">
+          </div>
+        </div>
+
+        <!-- Комментарий / Замечания -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Замечания приёмной комиссии / лаборанта</label>
+          <textarea id="formNotes" rows="2" placeholder="Условия перевозки соблюдены, клейма соответствуют документам..." 
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+          <button type="button" onclick="closeShipmentModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Отмена
+          </button>
+          <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md shadow-red-600/20 transition">
+            Сохранить партию
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 5. TOAST NOTIFICATION BOX -->
+  <!-- ======================================================== -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 text-xs border border-slate-800">
+      <div id="toastIcon" class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+        <i class="fa-solid fa-check text-xs"></i>
+      </div>
+      <div>
+        <p id="toastTitle" class="font-bold">Уведомление</p>
+        <p id="toastMessage" class="text-slate-400">Действие выполнено успешно</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: DATA LOGIC, CRUD, AND UI STATE -->
+  <!-- ======================================================== -->
+  <script>
+    // Initial mock data simulating backend response
+    let shipmentsData = [
+      {
+        id: "shp-101",
+        ttn: "ТТН-8941",
+        supplier: "Агрокомплекс «Мираторг»",
+        category: "Говядина (полутуши охл.)",
+        netWeight: 8450,
+        grossWeight: 9100,
+        temperature: 2.1,
+        mercuryId: "mercury-uuid-749b-9011-aa4",
+        status: "ACCEPTED",
+        arrivalDate: "2026-10-31 08:30",
+        truckPlate: "А 312 ЕВ 197",
+        vetOfficer: "Воронов С. М. (РайСББЖ)",
+        sealNumber: "PL-992144",
+        notes: "Охлаждение качественное. Клеймение туш чёткое, 1 категория упитанности."
+      },
+      {
+        id: "shp-102",
+        ttn: "ТТН-8942",
+        supplier: "ГК «Черкизово»",
+        category: "Свинина (полутуши 2 кат.)",
+        netWeight: 12200,
+        grossWeight: 13150,
+        temperature: 1.8,
+        mercuryId: "mercury-uuid-1102-bc32-fe8",
+        status: "ACCEPTED",
+        arrivalDate: "2026-10-31 09:15",
+        truckPlate: "В 704 ХО 777",
+        vetOfficer: "Кузнецов И. Д. (Ветнадзор)",
+        sealNumber: "PL-003412",
+        notes: "Шпик не более 2.5 см, шкура чистая без задиров. Партия принята в цех жиловки."
+      },
+      {
+        id: "shp-103",
+        ttn: "ТТН-8943",
+        supplier: "ООО «Брянская Мясная Компания»",
+        category: "Говядина (четвертины охл.)",
+        netWeight: 6300,
+        grossWeight: 6800,
+        temperature: 3.8,
+        mercuryId: "mercury-uuid-9844-321b-cc1",
+        status: "INSPECTION",
+        arrivalDate: "2026-10-31 11:20",
+        truckPlate: "О 991 ЕК 32",
+        vetOfficer: "Соколова Е. В. (Ветлаборатория)",
+        sealNumber: "PL-450912",
+        notes: "Проводится повторный отбор проб на pH и содержание влаги перед выгрузкой."
+      },
+      {
+        id: "shp-104",
+        ttn: "ТТН-8944",
+        supplier: "Птицефабрика «Северная»",
+        category: "Птица (филе грудки зам.)",
+        netWeight: 9500,
+        grossWeight: 10100,
+        temperature: -18.4,
+        mercuryId: "mercury-uuid-5521-aa01-19d",
+        status: "ACCEPTED",
+        arrivalDate: "2026-10-31 12:45",
+        truckPlate: "С 503 ВР 47",
+        vetOfficer: "Иванова Т. П. (СББЖ №3)",
+        sealNumber: "PL-881230",
+        notes: "Заморозка глубокая (-18.4°C), дефростация не обнаружена. Гофроящики маркированы."
+      },
+      {
+        id: "shp-105",
+        ttn: "ТТН-8945",
+        supplier: "Фермерское х-во «Донские Степи»",
+        category: "Баранина (туши охл.)",
+        netWeight: 2100,
+        grossWeight: 2280,
+        temperature: 6.9,
+        mercuryId: "mercury-uuid-8871-3312-ea4",
+        status: "REJECTED",
+        arrivalDate: "2026-10-31 13:30",
+        truckPlate: "К 412 ТХ 161",
+        vetOfficer: "Воронов С. М. (РайСББЖ)",
+        sealNumber: "PL-110294",
+        notes: "ТЕМПЕРАТУРНЫЙ СБОЙ В РЕФРИЖЕРАТОРЕ (+6.9°C). Нарушен регламент холодовой цепи. Составлен акт возврата."
+      },
+      {
+        id: "shp-106",
+        ttn: "ТТН-8946",
+        supplier: "Агрохолдинг «Русагро»",
+        category: "Свинина (полутуши 2 кат.)",
+        netWeight: 14300,
+        grossWeight: 15400,
+        temperature: 2.4,
+        mercuryId: "mercury-uuid-9901-5412-ee9",
+        status: "UNLOADING",
+        arrivalDate: "2026-10-31 14:10",
+        truckPlate: "М 883 УЕ 68",
+        vetOfficer: "Петров В. А. (Ветслужба)",
+        sealNumber: "PL-339102",
+        notes: "Подача на пандус №4. Выполняется взвешивание на монорельсовых подвесных весах."
+      }
+    ];
+
+    // Status styling metadata
+    const STATUS_MAP = {
+      ACCEPTED: {
+        label: "Принято на склад",
+        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: "fa-solid fa-circle-check"
+      },
+      INSPECTION: {
+        label: "Ветконтроль",
+        badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+        icon: "fa-solid fa-flask"
+      },
+      UNLOADING: {
+        label: "Ожидает разгрузки",
+        badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+        icon: "fa-solid fa-truck-ramp-box"
+      },
+      REJECTED: {
+        label: "Брак / Возврат",
+        badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+        icon: "fa-solid fa-triangle-exclamation"
+      }
+    };
+
+    // ==========================================
+    // INITIALIZATION & TAB CONTROLS
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set current datetime in form
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('formDateTime').value = now.toISOString().slice(0, 16);
+      
+      renderShipmentsTable();
+      updateDashboardStats();
+    });
+
+    // Login Form Handler
+    function handleLogin(e) {
+      e.preventDefault();
+      const login = document.getElementById('loginUsername').value;
+      
+      // Smooth hide auth, show main
+      const authScreen = document.getElementById('screen-auth');
+      authScreen.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+      setTimeout(() => {
+        authScreen.classList.add('hidden');
+        showToast('Вход выполнен', `Добро пожаловать, оператор (${login})`);
+      }, 300);
+    }
+
+    // Logout Handler
+    function handleLogout() {
+      const authScreen = document.getElementById('screen-auth');
+      authScreen.classList.remove('hidden', 'opacity-0');
+      showToast('Выход', 'Сессия работы со складом завершена');
+    }
+
+    function togglePasswordVisibility() {
+      const pwdInput = document.getElementById('loginPassword');
+      const icon = document.getElementById('pwdToggleIcon');
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        pwdInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
+    // ==========================================
+    // TABLE RENDERING & FILTERING
+    // ==========================================
+    function renderShipmentsTable(items = shipmentsData) {
+      const tbody = document.getElementById('shipmentsTableBody');
+      tbody.innerHTML = '';
+
+      if (items.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center py-12 text-slate-400">
+              <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+              По вашему запросу партий не найдено
+            </td>
+          </tr>
+        `;
+        document.getElementById('displayedCount').textContent = '0';
+        return;
+      }
+
+      items.forEach(shipment => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition-colors group";
+
+        const statusConf = STATUS_MAP[shipment.status] || STATUS_MAP.ACCEPTED;
+
+        // Temperature color check
+        let tempColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
+        if (shipment.temperature > 4.0) {
+          tempColor = "text-rose-700 bg-rose-50 border-rose-200";
+        } else if (shipment.temperature < 0 && shipment.category.includes('зам')) {
+          tempColor = "text-sky-700 bg-sky-50 border-sky-200";
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-slate-900">
+            <span class="hover:text-red-600 cursor-pointer" onclick="openViewModal('${shipment.id}')">
+              ${escapeHtml(shipment.ttn)}
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            <div class="font-semibold text-slate-900">${escapeHtml(shipment.supplier)}</div>
+            <div class="text-[10px] text-slate-400 flex items-center space-x-1">
+              <i class="fa-solid fa-truck text-[9px]"></i>
+              <span>${escapeHtml(shipment.truckPlate || 'Номер не указан')}</span>
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-block px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-medium border border-slate-200">
+              ${escapeHtml(shipment.category)}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right font-mono">
+            <div class="font-bold text-slate-900">${numberWithSpaces(shipment.netWeight)} кг</div>
+            <div class="text-[10px] text-slate-400">Брутто: ${numberWithSpaces(shipment.grossWeight || shipment.netWeight)} кг</div>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <span class="font-mono text-xs px-2 py-0.5 rounded-lg border ${tempColor} font-bold inline-block">
+              ${shipment.temperature > 0 ? '+' : ''}${shipment.temperature} °C
+            </span>
+          </td>
+          <td class="py-3 px-4 font-mono text-[11px]">
+            <div class="text-slate-800 truncate max-w-[120px]" title="${escapeHtml(shipment.mercuryId)}">
+              ${escapeHtml(shipment.mercuryId)}
+            </div>
+            <span class="text-[9px] text-emerald-600 font-semibold flex items-center">
+              <i class="fa-solid fa-check text-[8px] mr-1"></i> ВСД Погашено
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusConf.badgeClass}">
+              <i class="${statusConf.icon} text-[10px]"></i>
+              <span>${statusConf.label}</span>
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-500 whitespace-nowrap text-[11px]">
+            ${formatDisplayDate(shipment.arrivalDate)}
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <div class="flex items-center justify-center space-x-1">
+              <!-- View Button -->
+              <button onclick="openViewModal('${shipment.id}')" title="Просмотр деталей" class="w-7 h-7 rounded-lg hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+              <!-- Edit Button -->
+              <button onclick="openEditModal('${shipment.id}')" title="Редактировать" class="w-7 h-7 rounded-lg hover:bg-amber-100 text-amber-700 flex items-center justify-center transition">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <!-- Delete Button -->
+              <button onclick="deleteShipment('${shipment.id}')" title="Удалить партию" class="w-7 h-7 rounded-lg hover:bg-rose-100 text-rose-600 flex items-center justify-center transition">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('displayedCount').textContent = items.length;
+      document.getElementById('totalAvailableCount').textContent = shipmentsData.length;
+    }
+
+    function applyFilters() {
+      const searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
+      const statusVal = document.getElementById('statusFilter').value;
+      const categoryVal = document.getElementById('categoryFilter').value;
+
+      const filtered = shipmentsData.filter(item => {
+        // Search condition
+        const matchSearch = !searchVal || 
+          item.ttn.toLowerCase().includes(searchVal) ||
+          item.supplier.toLowerCase().includes(searchVal) ||
+          item.mercuryId.toLowerCase().includes(searchVal) ||
+          (item.truckPlate && item.truckPlate.toLowerCase().includes(searchVal));
+
+        // Status condition
+        const matchStatus = (statusVal === 'ALL') || (item.status === statusVal);
+
+        // Category condition
+        const matchCategory = (categoryVal === 'ALL') || item.category.toLowerCase().includes(categoryVal.toLowerCase());
+
+        return matchSearch && matchStatus && matchCategory;
+      });
+
+      renderShipmentsTable(filtered);
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('statusFilter').value = 'ALL';
+      document.getElementById('categoryFilter').value = 'ALL';
+      applyFilters();
+    }
+
+    // ==========================================
+    // STATS AGGREGATOR
+    // ==========================================
+    function updateDashboardStats() {
+      const totalCount = shipmentsData.length;
+      const totalWeight = shipmentsData.reduce((acc, curr) => acc + Number(curr.netWeight || 0), 0);
+      const pendingCount = shipmentsData.filter(i => i.status === 'INSPECTION' || i.status === 'UNLOADING').length;
+
+      document.getElementById('statTotalCount').textContent = `${totalCount} партий`;
+      document.getElementById('statTotalWeight').textContent = `${numberWithSpaces(totalWeight)} кг`;
+      document.getElementById('statPendingCount').textContent = `${pendingCount} партии`;
+    }
+
+    // ==========================================
+    // VIEW SHIPMENT DETAILS MODAL
+    // ==========================================
+    function openViewModal(id) {
+      const item = shipmentsData.find(s => s.id === id);
+      if (!item) return;
+
+      document.getElementById('viewModalTtn').textContent = item.ttn;
+      document.getElementById('viewModalSupplier').textContent = item.supplier;
+      
+      const statusConf = STATUS_MAP[item.status] || STATUS_MAP.ACCEPTED;
+      const statusBadge = document.getElementById('viewModalStatusBadge');
+      statusBadge.textContent = statusConf.label;
+      statusBadge.className = `text-xs px-2.5 py-0.5 rounded-full font-semibold border ${statusConf.badgeClass}`;
+
+      document.getElementById('viewCategory').textContent = item.category;
+      document.getElementById('viewNetWeight').textContent = `${numberWithSpaces(item.netWeight)} кг`;
+      
+      const tempEl = document.getElementById('viewTemp');
+      tempEl.textContent = `${item.temperature > 0 ? '+' : ''}${item.temperature} °C`;
+      tempEl.className = item.temperature > 4 ? 'text-sm font-bold mt-0.5 font-mono text-rose-600' : 'text-sm font-bold mt-0.5 font-mono text-emerald-600';
+
+      document.getElementById('viewTime').textContent = formatDisplayDate(item.arrivalDate);
+      document.getElementById('viewVsdUuid').textContent = item.mercuryId;
+      document.getElementById('viewVetOfficer').textContent = item.vetOfficer || "Дежурный госветврач цеха";
+      document.getElementById('viewTruckPlate').textContent = item.truckPlate || "Не указан";
+      document.getElementById('viewSealNumber').textContent = item.sealNumber || "PL-000000";
+      document.getElementById('viewNotes').textContent = item.notes || "Замечания и отклонения отсутствуют.";
+
+      // Hook up edit button inside modal
+      document.getElementById('viewModalEditBtn').onclick = () => {
+        closeViewModal();
+        openEditModal(item.id);
+      };
+
+      document.getElementById('viewModal').classList.remove('hidden');
+    }
+
+    function closeViewModal() {
+      document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // CREATE / EDIT SHIPMENT MODAL
+    // ==========================================
+    function openShipmentModal() {
+      // Clear form for creation
+      document.getElementById('formModalTitle').textContent = "Оформление новой отгрузки мяса";
+      document.getElementById('formShipmentId').value = "";
+      document.getElementById('shipmentForm').reset();
+
+      // default auto-values
+      document.getElementById('formTtn').value = `ТТН-${Math.floor(8900 + Math.random() * 100)}`;
+      document.getElementById('formMercuryId').value = `mercury-uuid-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`;
+      
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('formDateTime').value = now.toISOString().slice(0, 16);
+
+      document.getElementById('shipmentModal').classList.remove('hidden');
+    }
+
+    function openEditModal(id) {
+      const item = shipmentsData.find(s => s.id === id);
+      if (!item) return;
+
+      document.getElementById('formModalTitle').textContent = `Редактирование партии ${item.ttn}`;
+      document.getElementById('formShipmentId').value = item.id;
+      document.getElementById('formTtn').value = item.ttn;
+      document.getElementById('formSupplier').value = item.supplier;
+      document.getElementById('formCategory').value = item.category;
+      document.getElementById('formStatus').value = item.status;
+      document.getElementById('formNetWeight').value = item.netWeight;
+      document.getElementById('formGrossWeight').value = item.grossWeight || item.netWeight;
+      document.getElementById('formTemp').value = item.temperature;
+      document.getElementById('formMercuryId').value = item.mercuryId;
+      document.getElementById('formTruckPlate').value = item.truckPlate || '';
+      document.getElementById('formDateTime').value = item.arrivalDate.replace(' ', 'T');
+      document.getElementById('formNotes').value = item.notes || '';
+
+      document.getElementById('shipmentModal').classList.remove('hidden');
+    }
+
+    function closeShipmentModal() {
+      document.getElementById('shipmentModal').classList.add('hidden');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const existingId = document.getElementById('formShipmentId').value;
+
+      const shipmentObj = {
+        ttn: document.getElementById('formTtn').value.trim(),
+        supplier: document.getElementById('formSupplier').value.trim(),
+        category: document.getElementById('formCategory').value,
+        status: document.getElementById('formStatus').value,
+        netWeight: Number(document.getElementById('formNetWeight').value),
+        grossWeight: Number(document.getElementById('formGrossWeight').value) || Number(document.getElementById('formNetWeight').value),
+        temperature: parseFloat(document.getElementById('formTemp').value),
+        mercuryId: document.getElementById('formMercuryId').value.trim(),
+        truckPlate: document.getElementById('formTruckPlate').value.trim().toUpperCase(),
+        arrivalDate: document.getElementById('formDateTime').value.replace('T', ' '),
+        notes: document.getElementById('formNotes').value.trim()
+      };
+
+      if (existingId) {
+        // Edit existing
+        const index = shipmentsData.findIndex(s => s.id === existingId);
+        if (index !== -1) {
+          shipmentsData[index] = { ...shipmentsData[index], ...shipmentObj };
+          showToast('Партия обновлена', `Данные ТТН ${shipmentObj.ttn} успешно сохранены`);
+        }
+      } else {
+        // Add new
+        const newRecord = {
+          id: `shp-${Date.now()}`,
+          ...shipmentObj,
+          vetOfficer: "Иван Смирнов (Приёмщик №2)",
+          sealNumber: `PL-${Math.floor(100000 + Math.random() * 900000)}`
+        };
+        shipmentsData.unshift(newRecord);
+        showToast('Поставка зарегистрирована', `Партия ${newRecord.ttn} добавлена в очередь`);
+      }
+
+      closeShipmentModal();
+      applyFilters();
+      updateDashboardStats();
+    }
+
+    // ==========================================
+    // DELETE SHIPMENT
+    // ==========================================
+    function deleteShipment(id) {
+      const item = shipmentsData.find(s => s.id === id);
+      if (!item) return;
+
+      // Custom non-alert confirm pattern using custom prompt or quick action
+      const userConfirmed = window.confirm(`Вы уверены, что хотите удалить партию ${item.ttn} (${item.supplier}) из базы приёмки?`);
+      if (userConfirmed) {
+        shipmentsData = shipmentsData.filter(s => s.id !== id);
+        applyFilters();
+        updateDashboardStats();
+        showToast('Партия удалена', `Запись ${item.ttn} исключена из журнала`);
+      }
+    }
+
+    // ==========================================
+    // EXPORT & PRINT ACTIONS
+    // ==========================================
+    function exportToCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,ТТН,Поставщик,Категория,ВесНетто,Температура,Статус,Дата\n";
+      shipmentsData.forEach(s => {
+        csvContent += `"${s.ttn}","${s.supplier}","${s.category}",${s.netWeight},${s.temperature},"${s.status}","${s.arrivalDate}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `otgruzki_myaso_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Экспорт сформирован', 'Файл выгружен для импорта в 1С:Предприятие');
+    }
+
+    function printShipmentCard() {
+      window.print();
+    }
+
+    function alertNotice(title, msg) {
+      showToast(title, msg);
+    }
+
+    // Toast helper
+    function showToast(title, message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMessage').textContent = message;
+      
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3200);
+    }
+
+    // Utility formatting helpers
+    function numberWithSpaces(x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '';
+      // Expecting 'YYYY-MM-DD HH:mm'
+      const parts = dateStr.split(' ');
+      if (parts.length === 2) {
+        const d = parts[0].split('-');
+        return `${d[2]}.${d[1]} ${parts[1]}`;
+      }
+      return dateStr;
+    }
+
+    function escapeHtml(string) {
+      if (!string) return '';
+      return String(string).replace(/[&<>"']/g, function (s) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[s];
+      });
+    }
+  </script>
+</body>
+</html>

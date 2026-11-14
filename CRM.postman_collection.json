@@ -1,0 +1,50 @@
+{
+  "info": {
+    "name": "CRM API — поставки",
+    "description": "Коллекция соответствует текущим маршрутам и моделям Go. Укажите baseUrl и supplyId. В запросе создания id должен совпадать с supplyId и быть свободным в базе: ответ создания не возвращает id. Для проверки CRUD выполняйте запросы по порядку. Создание, обновление и удаление изменяют базу данных.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080", "type": "string"},
+    {"key": "supplyId", "value": "1001", "type": "string"}
+  ],
+  "item": [
+    {
+      "name": "Создать поставку",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": "{{baseUrl}}/supply",
+        "description": "Укажите свободный id и тот же идентификатор в supplyId. commingFrom и saleDate имеют тип int64; offals — массив объектов с id и name.",
+        "body": {"mode": "raw", "raw": "{\n  \"id\": 1001,\n  \"livestockType\": \"cattle\",\n  \"commingFrom\": 1,\n  \"weight\": 500,\n  \"saleDate\": 1735689600,\n  \"salesWeight\": 450,\n  \"offals\": []\n}", "options": {"raw": {"language": "json"}}}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Статус ответа: 200', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Список поставок",
+      "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/supply"},
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Статус ответа: 200', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Получить поставку",
+      "request": {"method": "GET", "header": [], "url": "{{baseUrl}}/supply/{{supplyId}}"},
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Статус ответа: 200', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Обновить поставку",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": "{{baseUrl}}/supply/{{supplyId}}",
+        "description": "Идентификатор берётся из URL и перезаписывает id из тела. Передавайте полную модель.",
+        "body": {"mode": "raw", "raw": "{\n  \"livestockType\": \"cattle\",\n  \"commingFrom\": 1,\n  \"weight\": 510,\n  \"saleDate\": 1735689600,\n  \"salesWeight\": 460,\n  \"offals\": []\n}", "options": {"raw": {"language": "json"}}}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Статус ответа: 200', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Удалить поставку",
+      "request": {"method": "DELETE", "header": [], "url": "{{baseUrl}}/supply/{{supplyId}}"},
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Статус ответа: 200', () => pm.response.to.have.status(200));"]}}]
+    }
+  ]
+}

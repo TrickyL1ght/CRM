@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b63430">
+  <title>МясоПром — учёт поставок</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23b63430'/%3E%3Cpath d='M10 28V12l10 11 10-11v16' fill='none' stroke='white' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/src/styles.css">
+  <script type="module" src="/src/app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="#supplies" class="brand"><span class="brand-mark">М</span><span>МясоПром<small>УЧЁТ И КОНТРОЛЬ</small></span></a>
+    <div class="workspace"><span class="workspace-icon">МП</span><div>Рабочее пространство<small>Управление поставками</small></div></div>
+    <div class="nav-label">РАБОЧАЯ ОБЛАСТЬ</div>
+    <nav aria-label="Основная навигация">
+      <a href="#supplies" data-page="supplies"><span aria-hidden="true">▤</span>Поставки<span class="nav-count" id="supply-count">—</span></a>
+      <a href="#sales" data-page="sales"><span aria-hidden="true">↗</span>Продажи</a>
+      <a href="#offals" data-page="offals"><span aria-hidden="true">▦</span>Субпродукты</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="status-dot"></span>Учёт сырья<small>МясоПром CRM · версия 0.1</small></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div><span class="breadcrumb">Рабочая область</span><span class="slash">/</span><span id="breadcrumb-current">Поставки</span></div><time id="today"></time></header>
+    <main id="main-content">
+      <div class="page-heading"><div><div class="eyebrow">УПРАВЛЕНИЕ СЫРЬЁМ</div><h1 id="page-title">Поставки</h1><p id="page-description">От поступления до остатка — все партии в одном месте.</p></div><button class="button primary" id="add-supply"><span aria-hidden="true">＋</span> Новая поставка</button></div>
+      <section class="metrics" aria-label="Показатели поставок">
+        <article class="metric"><div class="metric-top">Всего поставок<span class="metric-icon">▤</span></div><strong id="metric-count">—</strong><small>В реестре поступлений</small></article>
+        <article class="metric"><div class="metric-top">Поступило сырья<span class="metric-icon red">↓</span></div><strong><span id="metric-weight">—</span> <em>кг</em></strong><small>Общий вес всех партий</small></article>
+        <article class="metric"><div class="metric-top">Реализовано<span class="metric-icon green">↗</span></div><strong><span id="metric-sold">—</span> <em>кг</em></strong><small>По зарегистрированным продажам</small></article>
+        <article class="metric"><div class="metric-top">Остаток сырья<span class="metric-icon amber">▦</span></div><strong><span id="metric-remaining">—</span> <em>кг</em></strong><small>Поступления за вычетом продаж</small></article>
+      </section>
+      <div id="load-error" class="notice error" role="alert" hidden></div>
+      <section class="panel">
+        <div class="panel-heading"><div><h2 id="table-title">Реестр поставок <span id="result-count" class="count-pill">0</span></h2><p id="table-description">Все зарегистрированные партии сырья</p></div><button id="refresh" class="button secondary">↻ Обновить</button></div>
+        <form id="filters" class="filters" role="search">
+          <label class="search-field"><span aria-hidden="true">⌕</span><input name="query" id="search" type="search" aria-label="Поиск по поставщику или номеру" placeholder="Поставщик или № поставки"></label>
+          <label><span class="sr-only">Вид сырья</span><select name="type" id="type-filter"><option value="">Все виды сырья</option value="cattle">КРС</option><option value="pig">Свинина</option><option value="sheep">Баранина</option><option value="poultry">Птица</option></select></label>
+          <label class="date-filter">С <input type="date" name="from" aria-label="Начало периода"></label>
+          <label class="date-filter">По <input type="date" name="to" aria-label="Конец периода"></label>
+          <button type="reset" class="text-button">Сбросить</button>
+        </form>
+        <div id="table-container" class="table-container" aria-live="polite" aria-busy="true"></div>
+        <div class="panel-footer"><span id="table-summary">Загружаем данные…</span><span class="footer-note">Вес указан в килограммах</span></div>
+      </section>
+      <footer class="page-footer">МясоПром CRM<span>Порядок в каждой поставке.</span></footer>
+    </main>
+  </div>
+  <dialog id="supply-dialog" aria-labelledby="form-title">
+    <form id="supply-form">
+      <div class="dialog-heading"><div><div class="eyebrow">РЕЕСТР ПОСТУПЛЕНИЙ</div><h2 id="form-title">Новая поставка</h2></div><button type="button" class="icon-button close-dialog" aria-label="Закрыть">×</button></div>
+      <p class="form-intro">Заполните данные партии. Поля со звёздочкой обязательны.</p>
+      <label class="field">Поставщик *<input name="commingFrom" required maxlength="255" placeholder="Например, ООО «Агроферма»" autocomplete="organization"></label>
+      <div class="form-grid"><label class="field">Вид сырья *<input name="livestockType" list="livestock-options" required maxlength="25" placeholder="Выберите или введите"><datalist id="livestock-options"><option value="cattle">КРС</option><option value="pig">Свинина</option><option value="sheep">Баранина</option><option value="poultry">Птица</option></datalist></label><label class="field">Дата поступления *<input type="date" name="dateOfReceipt" required min="1970-01-02" max="9999-12-31"></label></div>
+      <label class="field">Вес партии, кг *<input type="number" name="weight" required min="1" max="2147483647" step="1" placeholder="0"><small>Целое число в килограммах</small></label>
+      <fieldset><legend>Субпродукты</legend><div id="offal-options" class="offal-options"></div><p id="offal-hint" class="field-hint"></p></fieldset>
+      <div id="form-error" class="notice error" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button secondary close-dialog">Отмена</button><button type="submit" class="button primary" id="save-supply">Сохранить поставку</button></div>
+    </form>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title"><div class="dialog-heading"><h2 id="delete-title">Удалить поставку?</h2><button class="icon-button" id="close-delete" aria-label="Закрыть">×</button></div><p id="delete-description"></p><div id="delete-error" class="notice error" role="alert" hidden></div><div class="dialog-actions"><button class="button secondary" id="cancel-delete">Отмена</button><button class="button primary" id="confirm-delete">Удалить поставку</button></div></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>
