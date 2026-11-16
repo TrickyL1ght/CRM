@@ -38,6 +38,7 @@ func (h *Handlers) InitRoutes() *gin.Engine {
 	salesApi := router.Group("/sales")
 	{
 		salesApi.GET("", h.GetSalesList)
+		salesApi.POST("/create", h.CreateOrder)
 	}
 
 	return router

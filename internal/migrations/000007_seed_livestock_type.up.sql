@@ -1,0 +1,1 @@
+INSERT INTO livestock_type (name) VALUES ('Бык'), ('Корова'), ('Телка')

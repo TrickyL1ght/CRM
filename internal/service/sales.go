@@ -9,6 +9,7 @@ import (
 type SalesService interface {
 	GetSalesList() ([]model.Sale, error)
 	GetReminderById(id int) (int, error)
+	CreateOrder(sales []model.Sale) error
 }
 
 type SalesServ struct {
@@ -19,12 +20,12 @@ func NewSalesServ(repository repository.Repository) *SalesServ {
 	return &SalesServ{repository}
 }
 
-func (s *SalesServ) GetSalesList() (model.Sales, error) {
+func (s *SalesServ) GetSalesList() ([]model.Sale, error) {
 	salesList, err := s.repository.GetSalesList()
 	if err != nil {
-		return model.Sales{}, err
+		return []model.Sale{}, err
 	}
-	return model.Sales{salesList}, nil
+	return salesList, nil
 }
 
 func (s *SalesServ) GetReminderById(id int) (int, error) {
@@ -52,4 +53,8 @@ func (s *SalesServ) GetReminderById(id int) (int, error) {
 	reminder := supply.Weight - totalWeight
 
 	return reminder, nil
+}
+
+func (s *SalesServ) CreateOrder(sales []model.Sale) error {
+	return s.repository.CreateOrder(sales)
 }
