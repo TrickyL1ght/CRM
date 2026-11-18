@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"CRM/internal/model"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +20,7 @@ func (h *Handlers) CreateOrder(c *gin.Context) {
 	var request model.CreateOrderRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
-		c.JSON(400, err)
+		c.JSON(400, map[string]string{"error": "Некорректное тело запроса"})
 		return
 	}
 
@@ -29,7 +30,7 @@ func (h *Handlers) CreateOrder(c *gin.Context) {
 	}
 
 	if err := h.service.CreateOrder(salesList); err != nil {
-		c.JSON(400, err)
+		c.JSON(400, gin.H{"error": fmt.Sprintf("Ошибка при сохранении продажи: %s", err.Error())})
 		return
 	}
 

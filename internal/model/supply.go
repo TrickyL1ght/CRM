@@ -10,6 +10,10 @@ type Supply struct {
 	Sale          []Sale  `json:"sale"`
 }
 
+func (s Supply) TableName() string {
+	return "supply"
+}
+
 type SupplyListResponse struct {
 	Id            int     `json:"id"`
 	LivestockType int     `json:"livestockType,omitempty"`
@@ -21,6 +25,5 @@ type SupplyListResponse struct {
 	Remainder     int     `json:"remainder"`
 }
 
-func (s Supply) TableName() string {
-	return "supply"
+type SupplyOffal struct {
 }
